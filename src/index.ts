@@ -30,7 +30,19 @@ class Server {
             conn.peer1.req.pipe(conn.peer2.res);
             conn.peer2.req.pipe(conn.peer1.res);
             // TODO: should add end/close/error
-            // TODO: should delete this.pathToConnection[path] after transfer
+
+            // TODO: should delete this.pathToConnection[path] in proper timing after transfer
+            let unpiped: boolean = false;
+            const unpipeHandler = () => {
+              console.log(`on unpipe on ${path}`);
+              if(unpiped) {
+                delete this.pathToConnection[path];
+                console.log(`deleted on ${path}`);
+              }
+              unpiped = true;
+            };
+            conn.peer1.res.on("unpipe", unpipeHandler);
+            conn.peer2.res.on("unpipe", unpipeHandler);
           } else {
             // Reject
             res.writeHead(400);
@@ -43,7 +55,7 @@ class Server {
         break;
       default:
         // Reject
-        res.writeHead(400)
+        res.writeHead(400);
         res.end(`Error: Unexpected method: ${req.method}`);
     }
   };
